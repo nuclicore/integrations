@@ -1,0 +1,41 @@
+{
+  "name": "@nuclicore/integrations",
+  "version": "1.1.0",
+  "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun) and payments (Stripe)",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "nuclicore",
+    "integrations",
+    "email",
+    "payments",
+    "mailgun",
+    "stripe"
+  ],
+  "author": "Nuclicore",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuclicore/vision"
+  }
+}
