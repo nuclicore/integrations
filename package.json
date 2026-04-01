@@ -1,7 +1,7 @@
 {
   "name": "@nuclicore/integrations",
-  "version": "2.0.0",
-  "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun) and payments (Stripe)",
+  "version": "2.1.0",
+  "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun), payments (Stripe), storage (Azure Blob), and AI",
   "publishConfig": {
     "access": "public"
   },
@@ -29,8 +29,11 @@
     "integrations",
     "email",
     "payments",
+    "storage",
+    "ai",
     "mailgun",
-    "stripe"
+    "stripe",
+    "azure-blob"
   ],
   "author": "Nuclicore",
   "license": "MIT",
