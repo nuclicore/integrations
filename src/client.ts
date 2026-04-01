@@ -75,6 +75,129 @@ export class IntegrationClient {
     return result as unknown as IntegrationResponse<T>;
   }
 
+  async requestGet<T>(endpoint: string): Promise<IntegrationResponse<T>> {
+    this.ensureInitialized();
+    const url = `${this.gatewayUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'X-App-ID': this.appId,
+      'X-Environment': this.environment,
+    };
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await fetch(url, { method: 'GET', headers });
+    const result = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      const errorMessage =
+        (result.message as string) ||
+        (result.error as string) ||
+        'Request failed';
+      return { success: false, error: errorMessage };
+    }
+
+    return result as unknown as IntegrationResponse<T>;
+  }
+
+  async requestDelete<T>(
+    endpoint: string,
+    data: unknown,
+  ): Promise<IntegrationResponse<T>> {
+    this.ensureInitialized();
+    const url = `${this.gatewayUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-App-ID': this.appId,
+      'X-Environment': this.environment,
+    };
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(data),
+    });
+
+    const result = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      const errorMessage =
+        (result.message as string) ||
+        (result.error as string) ||
+        'Request failed';
+      return { success: false, error: errorMessage };
+    }
+
+    return result as unknown as IntegrationResponse<T>;
+  }
+
+  async requestMultipart<T>(
+    endpoint: string,
+    params: { path: string; file: Buffer | Blob | ArrayBuffer; contentType: string },
+  ): Promise<IntegrationResponse<T>> {
+    this.ensureInitialized();
+    const url = `${this.gatewayUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'X-App-ID': this.appId,
+      'X-Environment': this.environment,
+    };
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
+    const formData = new FormData();
+    const blob =
+      params.file instanceof Blob
+        ? params.file
+        : new Blob([params.file], { type: params.contentType });
+    formData.append('file', blob);
+    formData.append('path', params.path);
+    formData.append('contentType', params.contentType);
+
+    const response = await fetch(url, { method: 'POST', headers, body: formData });
+    const result = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      const errorMessage =
+        (result.message as string) ||
+        (result.error as string) ||
+        'Request failed';
+      return { success: false, error: errorMessage };
+    }
+
+    return result as unknown as IntegrationResponse<T>;
+  }
+
+  async requestStream(endpoint: string, data: unknown): Promise<globalThis.Response> {
+    this.ensureInitialized();
+    const url = `${this.gatewayUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-App-ID': this.appId,
+      'X-Environment': this.environment,
+    };
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
+    return fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+  }
+
   getAppId(): string {
     this.ensureInitialized();
     return this.appId;

@@ -1,6 +1,6 @@
 {
   "name": "@nuclicore/integrations",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun) and payments (Stripe)",
   "publishConfig": {
     "access": "public"
