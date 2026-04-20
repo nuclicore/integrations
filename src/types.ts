@@ -11,6 +11,14 @@ export interface IntegrationResponse<T = unknown> {
   error?: string;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded file content. */
+  data: string;
+  /** MIME type, e.g. 'application/pdf'. Optional but recommended. */
+  contentType?: string;
+}
+
 export interface SendEmailParams {
   to: string | string[];
   subject: string;
@@ -22,6 +30,8 @@ export interface SendEmailParams {
   bcc?: string | string[];
   template?: string;
   variables?: Record<string, string>;
+  /** Optional file attachments (each `data` must be base64-encoded). */
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
