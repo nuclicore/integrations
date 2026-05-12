@@ -48,6 +48,7 @@ export class AiModule {
     const decoder = new TextDecoder();
     let aggregatedContent = '';
     let finalResult: ChatResult | undefined;
+    let streamError: string | undefined;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -73,6 +74,11 @@ export class AiModule {
         try {
           const parsed = JSON.parse(raw) as Record<string, unknown>;
 
+          if (typeof parsed.error === 'string') {
+            streamError = parsed.error;
+            continue;
+          }
+
           if (typeof parsed.content === 'string') {
             onChunk(parsed.content);
             aggregatedContent += parsed.content;
@@ -86,9 +92,13 @@ export class AiModule {
             };
           }
         } catch {
-          // non-JSON SSE lines are silently skipped
+          continue;
         }
       }
+    }
+
+    if (streamError) {
+      return { success: false, error: streamError };
     }
 
     if (!finalResult) {
