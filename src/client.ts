@@ -2,13 +2,22 @@ import type { NuclicoreIntegrationsConfig, IntegrationResponse } from './types';
 
 const DEFAULT_GATEWAY_URL = 'https://integrations.nuclicore.com';
 
+type Environment = 'preview' | 'test' | 'production';
+
+const normalizeEnv = (value?: string): Environment | undefined => {
+  if (value === 'preview' || value === 'test' || value === 'production') {
+    return value;
+  }
+  return undefined;
+};
+
 export class IntegrationClient {
   private config: NuclicoreIntegrationsConfig;
   private initialized = false;
   private appId!: string;
   private apiKey?: string;
   private gatewayUrl!: string;
-  private environment!: 'preview' | 'production';
+  private environment!: Environment;
 
   constructor(config: NuclicoreIntegrationsConfig = {}) {
     this.config = config;
@@ -32,6 +41,7 @@ export class IntegrationClient {
       DEFAULT_GATEWAY_URL;
     this.environment =
       this.config.environment ||
+      normalizeEnv(process.env.NUCLICORE_ENVIRONMENT) ||
       (process.env.NODE_ENV === 'production' ? 'production' : 'preview');
     this.initialized = true;
   }
@@ -203,12 +213,12 @@ export class IntegrationClient {
     return this.appId;
   }
 
-  getEnvironment(): 'preview' | 'production' {
+  getEnvironment(): Environment {
     this.ensureInitialized();
     return this.environment;
   }
 
-  setEnvironment(environment: 'preview' | 'production'): void {
+  setEnvironment(environment: Environment): void {
     this.ensureInitialized();
     this.environment = environment;
   }

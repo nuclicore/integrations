@@ -2,7 +2,7 @@ export interface NuclicoreIntegrationsConfig {
   appId?: string;
   apiKey?: string;
   gatewayUrl?: string;
-  environment?: 'preview' | 'production';
+  environment?: 'preview' | 'test' | 'production';
 }
 
 export interface IntegrationResponse<T = unknown> {
@@ -117,6 +117,7 @@ export interface ChatMessage {
 export interface ChatParams {
   messages: ChatMessage[];
   model?: string;
+  provider?: string;
   maxTokens?: number;
   temperature?: number;
 }
@@ -137,6 +138,7 @@ export interface StreamParams extends ChatParams {
 export interface EmbedParams {
   input: string | string[];
   model?: string;
+  provider?: string;
 }
 
 export interface EmbedResult {

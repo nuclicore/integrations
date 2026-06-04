@@ -25,11 +25,11 @@ export class NuclicoreIntegrations {
     return this.client.getAppId();
   }
 
-  getEnvironment(): 'preview' | 'production' {
+  getEnvironment(): 'preview' | 'test' | 'production' {
     return this.client.getEnvironment();
   }
 
-  setEnvironment(environment: 'preview' | 'production'): void {
+  setEnvironment(environment: 'preview' | 'test' | 'production'): void {
     this.client.setEnvironment(environment);
   }
 }
