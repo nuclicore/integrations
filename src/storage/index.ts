@@ -3,6 +3,7 @@ import type {
   UploadParams,
   UploadResult,
   DownloadParams,
+  DownloadResult,
   DeleteParams,
   ListParams,
   ListResult,
@@ -34,12 +35,12 @@ export class StorageModule {
     return this.client.requestMultipart<UploadResult>('/v1/storage/upload', params);
   }
 
-  async download(params: DownloadParams): Promise<IntegrationResponse<Buffer>> {
+  async download(params: DownloadParams): Promise<IntegrationResponse<DownloadResult>> {
     if (!params.path) {
       return { success: false, error: 'Path is required' };
     }
 
-    return this.client.request<Buffer>('/v1/storage/download', params);
+    return this.client.request<DownloadResult>('/v1/storage/download', params);
   }
 
   async delete(params: DeleteParams): Promise<IntegrationResponse<void>> {

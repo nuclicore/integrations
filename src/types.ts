@@ -76,6 +76,16 @@ export interface DownloadParams {
   path: string;
 }
 
+export interface SerializedBuffer {
+  type: 'Buffer';
+  data: number[];
+}
+
+export interface DownloadResult {
+  buffer?: SerializedBuffer;
+  contentType?: string;
+}
+
 export interface DeleteParams {
   path: string;
 }
