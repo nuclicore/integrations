@@ -3,6 +3,7 @@ import { EmailModule } from './email';
 import { PaymentsModule } from './payments';
 import { StorageModule } from './storage';
 import { AiModule } from './ai';
+import { SmsModule } from './sms';
 import type { NuclicoreIntegrationsConfig } from './types';
 
 export class NuclicoreIntegrations {
@@ -12,6 +13,7 @@ export class NuclicoreIntegrations {
   public readonly payments: PaymentsModule;
   public readonly storage: StorageModule;
   public readonly ai: AiModule;
+  public readonly sms: SmsModule;
 
   constructor(config: NuclicoreIntegrationsConfig = {}) {
     this.client = new IntegrationClient(config);
@@ -19,6 +21,7 @@ export class NuclicoreIntegrations {
     this.payments = new PaymentsModule(this.client);
     this.storage = new StorageModule(this.client);
     this.ai = new AiModule(this.client);
+    this.sms = new SmsModule(this.client);
   }
 
   getAppId(): string {
@@ -39,4 +42,5 @@ export { EmailModule } from './email';
 export { PaymentsModule } from './payments';
 export { StorageModule } from './storage';
 export { AiModule } from './ai';
+export { SmsModule } from './sms';
 export * from './types';

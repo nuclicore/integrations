@@ -38,6 +38,36 @@ export interface SendEmailResult {
   messageId: string;
 }
 
+export interface SendSmsParams {
+  /** One or more recipient numbers in E.164 format, e.g. '+4915123456789'. */
+  to: string | string[];
+  message: string;
+  /**
+   * Sender ID — an alphanumeric sender (e.g. 'LTA') or a provisioned phone
+   * number. Optional if a default sender is configured for the app.
+   * Alphanumeric senders are one-way only and must be enabled per-country
+   * in the Azure Communication Services resource.
+   */
+  from?: string;
+  /** Request an async delivery report from the provider. */
+  enableDeliveryReport?: boolean;
+  /** Optional caller-defined tag echoed back on delivery reports. */
+  tag?: string;
+}
+
+export interface SmsRecipientResult {
+  to: string;
+  messageId?: string;
+  successful: boolean;
+  httpStatusCode?: number;
+  errorMessage?: string;
+}
+
+export interface SendSmsResult {
+  /** Per-recipient send outcome. Inspect `successful` for each number. */
+  results: SmsRecipientResult[];
+}
+
 export interface LineItem {
   name: string;
   description?: string;
