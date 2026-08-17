@@ -3,6 +3,7 @@ export interface NuclicoreIntegrationsConfig {
   apiKey?: string;
   gatewayUrl?: string;
   environment?: 'preview' | 'test' | 'production';
+  label?: string;
 }
 
 export interface IntegrationResponse<T = unknown> {
@@ -104,6 +105,11 @@ export interface UploadResult {
 
 export interface DownloadParams {
   path: string;
+}
+
+export interface StorageDownloadResult {
+  buffer: Buffer;
+  contentType?: string;
 }
 
 export interface DeleteParams {
