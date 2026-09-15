@@ -1,6 +1,6 @@
 {
   "name": "@nuclicore/integrations",
-  "version": "2.8.0",
+  "version": "3.0.0",
   "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun), payments (Stripe), storage (Azure Blob), SMS (Azure Communication Services), and AI",
   "publishConfig": {
     "access": "public"
@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest run",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
@@ -22,7 +23,8 @@
   "devDependencies": {
     "@types/node": "^22.10.7",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3"
   },
   "peerDependencies": {},
   "keywords": [

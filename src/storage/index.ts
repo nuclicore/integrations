@@ -1,5 +1,7 @@
 import type { IntegrationClient } from '../client';
+import { getBlob, isMissingRoute, putBlob, toBytes } from './direct';
 import type {
+  TransferUrlResult,
   UploadParams,
   UploadResult,
   DownloadParams,
@@ -55,6 +57,30 @@ export class StorageModule {
       return { success: false, error: 'Content type is required' };
     }
 
+    const signed = await this.client.requestEnvelope<TransferUrlResult>(
+      '/v1/storage/upload-url',
+      { path: params.path },
+    );
+    if (!isMissingRoute(signed.status)) {
+      if (!signed.result.success || !signed.result.data) {
+        return { success: false, error: signed.result.error || 'Upload failed' };
+      }
+      const bytes = await toBytes(params.file);
+      const put = await putBlob(signed.result.data.url, bytes, params.contentType);
+      if (!put.ok) {
+        return { success: false, error: `Azure Blob upload error: HTTP ${put.status}` };
+      }
+      return {
+        success: true,
+        data: { url: signed.result.data.blobUrl, size: bytes.byteLength, path: params.path },
+      };
+    }
+    return this.uploadViaGateway(params);
+  }
+
+  private async uploadViaGateway(
+    params: UploadParams,
+  ): Promise<IntegrationResponse<UploadResult>> {
     if (Buffer.isBuffer(params.file)) {
       const response = await this.client.requestBinaryUpload('/v1/storage/upload-binary', {
         path: params.path,
@@ -87,7 +113,28 @@ export class StorageModule {
     if (!params.path) {
       return { success: false, error: 'Path is required' };
     }
+    const signed = await this.client.requestEnvelope<TransferUrlResult>(
+      '/v1/storage/download-url',
+      { path: params.path },
+    );
+    if (!isMissingRoute(signed.status)) {
+      if (!signed.result.success || !signed.result.data) {
+        return { success: false, error: signed.result.error || 'Download failed' };
+      }
+      const blob = await getBlob(signed.result.data.url);
+      if (blob.ok && blob.buffer) {
+        return { success: true, data: { buffer: blob.buffer, contentType: blob.contentType } };
+      }
+      if (blob.status !== 404) {
+        return { success: false, error: `Azure Blob download error: HTTP ${blob.status}` };
+      }
+    }
+    return this.downloadViaGateway(params);
+  }
 
+  private async downloadViaGateway(
+    params: DownloadParams,
+  ): Promise<IntegrationResponse<StorageDownloadResult>> {
     const response = await this.client.requestBinary(
       '/v1/storage/download',
       params,

@@ -145,6 +145,11 @@ export interface SignedUrlResult {
   expiresAt: string;
 }
 
+export interface TransferUrlResult extends SignedUrlResult {
+  blobUrl: string;
+  path: string;
+}
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;

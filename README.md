@@ -106,3 +106,7 @@ NUCLICORE_GATEWAY_URL=https://integrations.nuclicore.com
 ## License
 
 MIT
+
+## Storage transfers in v3
+
+`storage.upload` and `storage.download` move file bytes directly between your app and the storage account: the SDK asks the gateway for a short-lived signed URL (`POST /v1/storage/upload-url` / `download-url`, charged like the classic upload/download) and then transfers the bytes itself, so large files never pass through the gateway. Both methods keep the v2 return shapes and fall back to the classic gateway routes automatically when talking to an older gateway or when a file lives in a legacy layout.

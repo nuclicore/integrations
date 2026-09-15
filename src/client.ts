@@ -91,6 +91,39 @@ export class IntegrationClient {
     return result as unknown as IntegrationResponse<T>;
   }
 
+  async requestEnvelope<T>(
+    endpoint: string,
+    data: unknown,
+  ): Promise<{ status: number; result: IntegrationResponse<T> }> {
+    this.ensureInitialized();
+    const url = `${this.gatewayUrl}${endpoint}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-App-ID': this.appId,
+      'X-Environment': this.environment,
+    };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+    if (this.label) {
+      headers['X-Nuclicore-Label'] = this.label;
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+    const result = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      const errorMessage =
+        (result.message as string) ||
+        (result.error as string) ||
+        'Request failed';
+      return { status: response.status, result: { success: false, error: errorMessage } };
+    }
+    return { status: response.status, result: result as unknown as IntegrationResponse<T> };
+  }
+
   async requestGet<T>(endpoint: string): Promise<IntegrationResponse<T>> {
     this.ensureInitialized();
     const url = `${this.gatewayUrl}${endpoint}`;
