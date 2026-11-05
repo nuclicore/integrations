@@ -118,4 +118,24 @@ describe('SDK 3.1 ai.chat (content parts, local checks, timeout, error codes)', 
     script([() => jsonResponse(500, { message: 'boom', error: 'Internal Server Error', statusCode: 500 })]);
     expect(await sdk().ai.chat(ask)).toEqual({ success: false, code: 'gateway_error', status: 500, error: 'boom' });
   });
+
+  it('SDK3-AI-7: malformed content is refused locally without throwing', async () => {
+    const calls = script([]);
+    const malformed = [
+      { messages: [{ role: 'user', content: undefined }] },
+      { messages: [{ role: 'user', content: [null] }] },
+      { messages: [{ role: 'user', content: [{ type: 'text' }] }] },
+      { messages: [{ role: 'user', content: [{ type: 'image' }] }] },
+    ] as unknown as ChatParams[];
+    const expected = [
+      'messages[0].content must be a string or an array of parts',
+      'messages[0].content[0] is not a valid content part',
+      'messages[0].content[0] has invalid text',
+      'messages[0].content[0] is not a valid content part',
+    ];
+    for (const [i, params] of malformed.entries()) {
+      expect(await sdk().ai.chat(params)).toEqual({ success: false, code: 'validation', error: expected[i] });
+    }
+    expect(calls).toHaveLength(0);
+  });
 });

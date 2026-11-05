@@ -118,7 +118,7 @@ const result = await integrations.ai.chat({
 });
 
 if (result.success) {
-  console.log(result.data.content, result.data.finishReason);
+  console.log(result.data?.content, result.data?.finishReason);
 } else {
   console.error(result.code, result.error, result.status, result.details);
 }
