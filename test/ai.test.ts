@@ -75,6 +75,12 @@ describe('SDK 3.1 ai.chat (content parts, local checks, timeout, error codes)', 
     script([() => jsonResponse(200, { success: false, error: 'Google error: x', code: 'content_filtered' })]);
     expect(await sdk().ai.chat(ask)).toEqual({ success: false, error: 'Google error: x', code: 'content_filtered' });
 
+    script([() => jsonResponse(200, { success: false, error: 'Openai error: x', code: 'content_filtered', providerStatus: 400 })]);
+    const filtered = await sdk().ai.chat(ask);
+    expect(filtered).toEqual({ success: false, error: 'Openai error: x', code: 'content_filtered', providerStatus: 400 });
+    const providerStatus: number | undefined = filtered.providerStatus;
+    expect(providerStatus).toBe(400);
+
     script([() => jsonResponse(413, { error: 'request_too_large', bytes: 1, limitBytes: 2 })]);
     const tooLarge = await sdk().ai.chat(ask);
     expect(tooLarge).toMatchObject({ success: false, code: 'request_too_large', status: 413 });
@@ -137,5 +143,21 @@ describe('SDK 3.1 ai.chat (content parts, local checks, timeout, error codes)', 
       expect(await sdk().ai.chat(params)).toEqual({ success: false, code: 'validation', error: expected[i] });
     }
     expect(calls).toHaveLength(0);
+  });
+
+  it('SDK3-AI-8: non-AI modules keep the 3.0 failure behaviour', async () => {
+    const email = { from: 'a@b.co', to: 'c@d.co', subject: 's', text: 't' };
+    script([() => { throw new TypeError('fetch failed'); }]);
+    await expect(sdk().email.send(email)).rejects.toThrow('fetch failed');
+
+    script([() => new Response('<h1>Bad Gateway</h1>', { status: 502, headers: { 'content-type': 'text/html' } })]);
+    await expect(sdk().email.send(email)).rejects.toThrow();
+
+    script([() => jsonResponse(413, { error: 'request_too_large', message: 'too big', bytes: 1, limitBytes: 2 })]);
+    expect(await sdk().email.send(email)).toEqual({ success: false, error: 'too big' });
+
+    const calls = script([() => jsonResponse(200, { success: true, data: { id: 'm' } })]);
+    expect(await sdk().email.send(email)).toEqual({ success: true, data: { id: 'm' } });
+    expect(calls[0].init.signal).toBeUndefined();
   });
 });

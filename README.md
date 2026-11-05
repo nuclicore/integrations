@@ -125,11 +125,12 @@ if (result.success) {
 ```
 
 - `topP` sets nucleus sampling.
-- `timeoutMs` (default `180000`) is the model deadline; the SDK aborts the HTTP call 10 s after it and returns `code: 'timeout'`.
+- `timeoutMs` (`15000`..`280000`, default `180000`) is the model deadline, measured by the gateway from the moment it receives the request; the SDK aborts the HTTP call 10 s after it and returns `code: 'timeout'`. Above `280000` the gateway answers a `validation` error (the ceiling keeps the SDK's abort under Node's 300 s default body timeout).
+- File part `data` must be standard base64 without line breaks or a `data:` prefix.
 - Requests larger than `CHAT_REQUEST_LIMIT_BYTES` (128 MiB) and malformed file parts are refused locally without a network call.
-- `finishReason` and the provider's `raw` response come back next to `content`.
+- `finishReason` (`null` when the provider sent none) and the provider's `raw` response come back next to `content`.
 
-Failures never throw; they return `success: false` with a `code`:
+`ai.chat` failures never throw; they return `success: false` with a `code`. The other modules keep the 3.0 behaviour: a network failure or a non-JSON reply rejects, and a JSON error returns `{ success: false, error }`.
 
 | `code` | Meaning |
 |--------|---------|
@@ -139,7 +140,7 @@ Failures never throw; they return `success: false` with a `code`:
 | `timeout` | The model or the gateway ran out of time |
 | `content_filtered` | The provider blocked the prompt or answer |
 | `provider_unreachable` | The provider or the gateway could not be reached |
-| `provider_error` | The provider returned an error (the reply also carries `providerStatus`) |
+| `provider_error` | The provider returned an error (`result.providerStatus` holds the provider's HTTP status when it answered with one) |
 | `budget_exceeded` | The app's AI budget for this month is used up |
 | `model_not_enabled` | The model is not enabled for this app |
 | `not_priced` | The model has no price configured |

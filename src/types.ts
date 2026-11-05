@@ -14,6 +14,7 @@ export interface IntegrationResponse<T = unknown> {
   error?: string;
   code?: IntegrationErrorCode | string;
   status?: number;
+  providerStatus?: number;
   details?: Record<string, unknown>;
 }
 
@@ -167,7 +168,7 @@ export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: s
 
 export interface ChatParams { messages: ChatMessage[]; model?: string; provider?: string; maxTokens?: number; temperature?: number; topP?: number; timeoutMs?: number }
 
-export interface ChatResult { content: string; model: string; usage: { inputTokens: number; outputTokens: number }; finishReason?: string; raw?: unknown }
+export interface ChatResult { content: string; model: string; usage: { inputTokens: number; outputTokens: number }; finishReason?: string | null; raw?: unknown }
 
 export interface StreamParams extends ChatParams {
   onChunk: (chunk: string) => void;

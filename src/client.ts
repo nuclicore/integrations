@@ -71,12 +71,12 @@ export class IntegrationClient {
       headers['X-Nuclicore-Label'] = this.label;
     }
 
-    const timeoutMs = options?.timeoutMs;
+    const init: RequestInit = { method: 'POST', headers, body: JSON.stringify(data) };
+    if (options === undefined) return this.plainRequest<T>(url, init);
+    const timeoutMs = options.timeoutMs;
     try {
       const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(data),
+        ...init,
         ...(timeoutMs === undefined ? {} : { signal: AbortSignal.timeout(timeoutMs) }),
       });
       const text = await response.text();
@@ -84,6 +84,19 @@ export class IntegrationClient {
     } catch (error) {
       return failureFromRejection<T>(error, timeoutMs);
     }
+  }
+
+  private async plainRequest<T>(url: string, init: RequestInit): Promise<IntegrationResponse<T>> {
+    const response = await fetch(url, init);
+    const result = (await response.json()) as Record<string, unknown>;
+    if (!response.ok) {
+      const errorMessage =
+        (result.message as string) ||
+        (result.error as string) ||
+        'Request failed';
+      return { success: false, error: errorMessage };
+    }
+    return result as unknown as IntegrationResponse<T>;
   }
 
   private outcome<T>(status: number, ok: boolean, text: string): IntegrationResponse<T> {
