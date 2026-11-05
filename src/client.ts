@@ -1,4 +1,5 @@
-import type { NuclicoreIntegrationsConfig, IntegrationResponse } from './types';
+import type { NuclicoreIntegrationsConfig, IntegrationResponse, RequestOptions } from './types';
+import { failureFromBody, failureFromRejection, failureFromText } from './failure';
 
 const DEFAULT_GATEWAY_URL = 'https://integrations.nuclicore.com';
 
@@ -51,6 +52,7 @@ export class IntegrationClient {
   async request<T>(
     endpoint: string,
     data: unknown,
+    options?: RequestOptions,
   ): Promise<IntegrationResponse<T>> {
     this.ensureInitialized();
     const url = `${this.gatewayUrl}${endpoint}`;
@@ -69,26 +71,39 @@ export class IntegrationClient {
       headers['X-Nuclicore-Label'] = this.label;
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
-
-    const result = (await response.json()) as Record<string, unknown>;
-
-    if (!response.ok) {
-      const errorMessage =
-        (result.message as string) ||
-        (result.error as string) ||
-        'Request failed';
-      return {
-        success: false,
-        error: errorMessage,
-      };
+    const timeoutMs = options?.timeoutMs;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+        ...(timeoutMs === undefined ? {} : { signal: AbortSignal.timeout(timeoutMs) }),
+      });
+      const text = await response.text();
+      return this.outcome<T>(response.status, response.ok, text);
+    } catch (error) {
+      return failureFromRejection<T>(error, timeoutMs);
     }
+  }
 
-    return result as unknown as IntegrationResponse<T>;
+  private outcome<T>(status: number, ok: boolean, text: string): IntegrationResponse<T> {
+    const body = this.parseObject(text);
+    if (!body) return failureFromText<T>(status);
+    if (ok) return body as unknown as IntegrationResponse<T>;
+    return this.failure<T>(status, body);
+  }
+
+  private failure<T>(status: number, body: Record<string, unknown>): IntegrationResponse<T> {
+    return failureFromBody<T>(status, body);
+  }
+
+  private parseObject(text: string): Record<string, unknown> | null {
+    try {
+      const parsed: unknown = JSON.parse(text);
+      return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
   }
 
   async requestEnvelope<T>(

@@ -1,6 +1,6 @@
 {
   "name": "@nuclicore/integrations",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Integration SDK for NUCLICORE generated applications - email (Mailgun), payments (Stripe), storage (Azure Blob), SMS (Azure Communication Services), and AI",
   "publishConfig": {
     "access": "public"

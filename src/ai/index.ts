@@ -7,6 +7,11 @@ import type {
   EmbedResult,
   IntegrationResponse,
 } from '../types';
+import { CHAT_REQUEST_LIMIT_BYTES } from '../types';
+import { estimateChatBytes, validateChatParams } from './validate';
+
+const DEFAULT_CHAT_TIMEOUT_MS = 180000;
+const TIMEOUT_GRACE_MS = 10000;
 
 export class AiModule {
   private client: IntegrationClient;
@@ -16,11 +21,23 @@ export class AiModule {
   }
 
   async chat(params: ChatParams): Promise<IntegrationResponse<ChatResult>> {
-    if (!params.messages || params.messages.length === 0) {
-      return { success: false, error: 'At least one message is required' };
+    const problem = validateChatParams(params);
+    if (problem) {
+      return { success: false, code: 'validation', error: problem };
     }
 
-    return this.client.request<ChatResult>('/v1/ai/chat', params);
+    const bytes = estimateChatBytes(params);
+    if (bytes > CHAT_REQUEST_LIMIT_BYTES) {
+      return {
+        success: false,
+        code: 'request_too_large',
+        error: `Request of ${bytes} bytes exceeds the ${CHAT_REQUEST_LIMIT_BYTES} byte limit`,
+        details: { bytes, limitBytes: CHAT_REQUEST_LIMIT_BYTES },
+      };
+    }
+
+    const timeoutMs = (params.timeoutMs ?? DEFAULT_CHAT_TIMEOUT_MS) + TIMEOUT_GRACE_MS;
+    return this.client.request<ChatResult>('/v1/ai/chat', params, { timeoutMs });
   }
 
   async stream(params: StreamParams): Promise<IntegrationResponse<ChatResult>> {

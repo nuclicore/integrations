@@ -6,10 +6,19 @@ export interface NuclicoreIntegrationsConfig {
   label?: string;
 }
 
+export type IntegrationErrorCode = 'request_too_large' | 'timeout' | 'content_filtered' | 'provider_unreachable' | 'provider_error' | 'unsupported_content' | 'budget_exceeded' | 'model_not_enabled' | 'not_priced' | 'not_configured' | 'gateway_error' | 'validation';
+
 export interface IntegrationResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: IntegrationErrorCode | string;
+  status?: number;
+  details?: Record<string, unknown>;
+}
+
+export interface RequestOptions {
+  timeoutMs?: number;
 }
 
 export interface EmailAttachment {
@@ -150,27 +159,15 @@ export interface TransferUrlResult extends SignedUrlResult {
   path: string;
 }
 
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+export const CHAT_REQUEST_LIMIT_BYTES = 134217728;
 
-export interface ChatParams {
-  messages: ChatMessage[];
-  model?: string;
-  provider?: string;
-  maxTokens?: number;
-  temperature?: number;
-}
+export type ChatContentPart = { type: 'text'; text: string } | { type: 'file'; mimeType: string; data: string };
 
-export interface ChatResult {
-  content: string;
-  model: string;
-  usage: {
-    inputTokens: number;
-    outputTokens: number;
-  };
-}
+export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string | ChatContentPart[] }
+
+export interface ChatParams { messages: ChatMessage[]; model?: string; provider?: string; maxTokens?: number; temperature?: number; topP?: number; timeoutMs?: number }
+
+export interface ChatResult { content: string; model: string; usage: { inputTokens: number; outputTokens: number }; finishReason?: string; raw?: unknown }
 
 export interface StreamParams extends ChatParams {
   onChunk: (chunk: string) => void;
