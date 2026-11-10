@@ -97,10 +97,17 @@ interface CreateCheckoutParams {
 
 ### `integrations.ai.chat(params)`
 
-Message `content` is either a string or an array of parts. File parts carry base64 data with a MIME type, so PDFs and images go straight to the model.
+Every call goes through the gateway to the AI provider configured for your app. The two fields that decide where a call lands:
+
+- `provider` (optional): one of `anthropic`, `openai`, `google`, `deepseek`, `kimi`, `azure-openai`, `azure-anthropic`, `azure-kimi`, `azure-deepseek` (exported as `AI_PROVIDERS` / `AiProvider`). Without it the gateway uses the app's default AI provider: the one marked primary (set by the platform when the AI integration was enabled), else the enabled provider that has models enabled under Integrations → AI, else the oldest enabled one, else `openai`. An app that has models enabled on one provider and nothing on another always lands on the one with models.
+- `model` (optional): the model name exactly as it appears in Integrations → AI for that provider. For `azure-*` providers this is the Azure deployment name (for example `gpt-6-luna`), not the upstream model id. Without it the provider's default model is used (`gpt-5.5` for `openai` / `azure-openai`, `claude-haiku-4-5` for `anthropic` / `azure-anthropic`, `gemini-3.5-flash` for `google`).
+
+Name both whenever a call depends on a specific model. Every model you name must be enabled for the app under Integrations → AI; a model that is not enabled answers `code: 'model_not_enabled'` with `error` naming the model and provider, and never reaches the provider.
 
 ```typescript
 const result = await integrations.ai.chat({
+  provider: 'azure-openai',
+  model: 'gpt-6-luna',
   messages: [
     { role: 'system', content: 'You extract invoice totals.' },
     {
@@ -111,8 +118,6 @@ const result = await integrations.ai.chat({
       ],
     },
   ],
-  temperature: 0.2,
-  topP: 0.9,
   maxTokens: 1024,
   timeoutMs: 120000,
 });
@@ -124,7 +129,18 @@ if (result.success) {
 }
 ```
 
-- `topP` sets nucleus sampling.
+Message `content` is either a string or an array of parts. File parts carry base64 data with a MIME type, so PDFs and images go straight to the model.
+
+#### Sampling parameters per provider
+
+| Parameter | `openai`, `azure-openai`, `deepseek`, `kimi`, `azure-*` on the OpenAI wire | `anthropic`, `azure-anthropic` | `google` |
+|---|---|---|---|
+| `maxTokens` | Sent as `max_completion_tokens` for reasoning models (`gpt-5` and later, o-series) and `max_tokens` otherwise | `max_tokens` (a per-model default applies when omitted) | `maxOutputTokens` |
+| `temperature` (0..2) | Forwarded; reasoning models reject it | Forwarded | Forwarded |
+| `topP` (0..1) | Forwarded; reasoning models reject it | Forwarded | Forwarded |
+
+Reasoning models (OpenAI `gpt-5` and later, the o-series, and Azure deployments of them under any deployment name) accept only their default sampling and reject `temperature` and `topP`. When a provider rejects a parameter (`unsupported_parameter` / `unsupported_value`), the gateway re-sends the call once without that parameter (or with `max_tokens` renamed to `max_completion_tokens`), so the call still succeeds, at the cost of one extra provider round trip within the same `timeoutMs`. Leave `temperature` and `topP` out for those models and rely on `maxTokens` plus the prompt.
+
 - `timeoutMs` (`15000`..`280000`, default `180000`) is the model deadline, measured by the gateway from the moment it receives the request; the SDK aborts the HTTP call 10 s after it and returns `code: 'timeout'`. Above `280000` the gateway answers a `validation` error (the ceiling keeps the SDK's abort under Node's 300 s default body timeout).
 - File part `data` must be standard base64 without line breaks or a `data:` prefix.
 - Requests larger than `CHAT_REQUEST_LIMIT_BYTES` (128 MiB) and malformed file parts are refused locally without a network call.
@@ -140,11 +156,11 @@ if (result.success) {
 | `timeout` | The model or the gateway ran out of time |
 | `content_filtered` | The provider blocked the prompt or answer |
 | `provider_unreachable` | The provider or the gateway could not be reached |
-| `provider_error` | The provider returned an error (`result.providerStatus` holds the provider's HTTP status when it answered with one) |
+| `provider_error` | The provider returned an error; `error` carries the provider's own message (for example an unsupported parameter it still rejected) and `result.providerStatus` its HTTP status when it answered with one |
 | `budget_exceeded` | The app's AI budget for this month is used up |
-| `model_not_enabled` | The model is not enabled for this app |
+| `model_not_enabled` | The model is not enabled for this app under Integrations → AI (`error` names the model and provider) |
 | `not_priced` | The model has no price configured |
-| `not_configured` | The integration is not configured |
+| `not_configured` | No credentials for the selected provider on this app: a `provider` nobody configured, or a default provider whose credentials were never set |
 | `gateway_error` | Any other gateway failure (`status` holds the HTTP status) |
 
 ## Environment Variables

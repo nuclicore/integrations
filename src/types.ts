@@ -166,7 +166,11 @@ export type ChatContentPart = { type: 'text'; text: string } | { type: 'file'; m
 
 export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: string | ChatContentPart[] }
 
-export interface ChatParams { messages: ChatMessage[]; model?: string; provider?: string; maxTokens?: number; temperature?: number; topP?: number; timeoutMs?: number }
+export const AI_PROVIDERS = ['anthropic', 'openai', 'google', 'deepseek', 'kimi', 'azure-openai', 'azure-anthropic', 'azure-kimi', 'azure-deepseek'] as const;
+
+export type AiProvider = (typeof AI_PROVIDERS)[number];
+
+export interface ChatParams { messages: ChatMessage[]; model?: string; provider?: AiProvider | (string & {}); maxTokens?: number; temperature?: number; topP?: number; timeoutMs?: number }
 
 export interface ChatResult { content: string; model: string; usage: { inputTokens: number; outputTokens: number }; finishReason?: string | null; raw?: unknown }
 
@@ -177,7 +181,7 @@ export interface StreamParams extends ChatParams {
 export interface EmbedParams {
   input: string | string[];
   model?: string;
-  provider?: string;
+  provider?: AiProvider | (string & {});
 }
 
 export interface EmbedResult {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NuclicoreIntegrations } from '../src/index';
-import type { ChatParams } from '../src/index';
+import { AI_PROVIDERS, NuclicoreIntegrations } from '../src/index';
+import type { AiProvider, ChatParams } from '../src/index';
 
 type Call = { url: string; init: RequestInit };
 
@@ -159,5 +159,17 @@ describe('SDK 3.1 ai.chat (content parts, local checks, timeout, error codes)', 
     const calls = script([() => jsonResponse(200, { success: true, data: { id: 'm' } })]);
     expect(await sdk().email.send(email)).toEqual({ success: true, data: { id: 'm' } });
     expect(calls[0].init.signal).toBeUndefined();
+  });
+});
+
+describe('ai.chat provider and model', () => {
+  it('sends provider and model verbatim and types the known providers', async () => {
+    const calls = script([() => jsonResponse(200, { success: true, data: { content: 'ok', model: 'gpt-6-luna', usage: { inputTokens: 1, outputTokens: 1 } } })]);
+    const provider: AiProvider = 'azure-openai';
+    const params: ChatParams = { messages: [{ role: 'user', content: 'hello' }], provider, model: 'gpt-6-luna' };
+    const result = await sdk().ai.chat(params);
+    expect(result.success).toBe(true);
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ messages: [{ role: 'user', content: 'hello' }], provider: 'azure-openai', model: 'gpt-6-luna' });
+    expect(AI_PROVIDERS).toEqual(['anthropic', 'openai', 'google', 'deepseek', 'kimi', 'azure-openai', 'azure-anthropic', 'azure-kimi', 'azure-deepseek']);
   });
 });
